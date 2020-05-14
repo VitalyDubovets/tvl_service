@@ -1,0 +1,10 @@
+version: '3'
+services:
+  redis:
+    image: redis
+    container_name: redis_tvl
+    ports:
+      - '6000:6379'
+    volumes:
+      - ./cache-data:/data
+    restart: always
