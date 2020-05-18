@@ -1,8 +1,8 @@
 from redis.exceptions import ConnectionError
+from rest_framework.exceptions import NotFound, ValidationError, APIException
 from rest_framework.response import Response
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.status import HTTP_201_CREATED, HTTP_200_OK
 from rest_framework.views import APIView
-import pdb
 
 from .services import get_unique_domains_from_links
 
@@ -19,10 +19,10 @@ class LinksCreateAPI(APIView):
                 self.db.zadd_with_unix_time('links', links)
                 response = {'status': 'ok'}
             except ConnectionError:
-                response = {'status': 'Connection to Redis is interrupted'}
+                raise APIException({'status': 'Connection to Redis is interrupted'})
         else:
-            response = {'status': 'Data is empty or incorrect.'}
-        return Response(response)
+            raise ValidationError({'status': 'Data is empty or incorrect'})
+        return Response(response, status=HTTP_201_CREATED)
 
 
 class LinksGetAPI(APIView):
@@ -40,4 +40,4 @@ class LinksGetAPI(APIView):
         if not unique_domains:
             raise NotFound({'status': 'The last visited domains were not found'})
         response = {'domains': unique_domains, 'status': 'ok'}
-        return Response(response)
+        return Response(response, status=HTTP_200_OK)
