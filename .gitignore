@@ -2,4 +2,6 @@
 .env
 *.pyc
 
+/src/db.sqlite3
+
 /cache-data

@@ -13,28 +13,42 @@ class RedisDB:
             port=os.getenv('REDIS_PORT', '6379')
         )
 
-    def _get_unix_time(self) -> int:
+    def _get_current_unix_time(self) -> int:
         """
-        Метод, возвращающий текущее время в unix формате (количество секунд)
+        Метод, возвращающий текущее время в unix формате
         :return: unix time (int format)
         """
         return self.store.execute_command('TIME')[0]
 
     def zadd_with_unix_time(self, key: str, values: list) -> int:
         """
-        Модифицированный метод zadd для удобного хранения ссылок под одним ключом, но с разными значениями (value)
+        Модифицированный метод zadd для удобного хранения ссылок под одним ключом, но с разными значениями
         и информацией о времени в формате unix в виде score
         :param key: Ключ
         :param values: Значения
         :return: Количество добавленных значений
         """
-        score = self._get_unix_time()
+        score = self._get_current_unix_time()
         values_score = {value: score for value in values}
         return self.store.zadd(key, values_score)
 
-    def zrangebyscore_by_unix_time(self, key: str, from_unix_time: int, to_unix_time: int) -> list:
+    def zrange_decoded(self, key: str, start=0, end=-1):
         """
-        Модифицированный метод zrangebyscore, который преобрзаует байтовые строки в обычные и производит фильтрацию
+        Модифицированный метод zrange, который декодирует байтовые строки полученные из Redis в обычные
+        :param key: Ключ
+        :param start: Начальный индекс
+        :param end: Конечный индекс
+        :return: Декодированный список
+        """
+        data = self.store.zrange(key, start, end)
+        decoded_data = []
+        for value in data:
+            decoded_data.append(value.decode('UTF-8'))
+        return decoded_data
+
+    def zrange_by_unix_time(self, key: str, from_unix_time: int, to_unix_time: int) -> list:
+        """
+        Модифицированный метод zrangebyscore, который декодирует байтовые строки в обычные и производит фильтрацию
         по unix времени, который хранится в score
         :param key: Ключ
         :param from_unix_time: Начало указанного промежутка времени
